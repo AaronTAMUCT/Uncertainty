@@ -515,65 +515,38 @@ def Data_Gen(Regions, Data, kScale, nstep, logfactorial, IncludeLognormal): # Da
 
 def ERange_Processing(Regions_Genus, kScale, nstep, logfactorial, ERangeCap): # Selective data processing function for Emean comparison.
     for reg in Regions_Genus: # I run this algorithm once for Species-species interactions and once more for the grouped interactions.
+        PlotInfo = {} # Dictionary to store values for the variance and bar plots by genus.    
         I = np.shape(Regions_Genus[reg]["Uncombined Variance Arrays"][0])[0]
         J = np.shape(Regions_Genus[reg]["Uncombined Variance Arrays"][0])[1]
-        ERange = np.zeros((I,J))
         # For interactions greater than ERangeCap, the ERange is entered into the array, otherwise it keeps it at 0.
         for i in range(I):
             for j in range(J):
                 if max(Regions_Genus[reg]["Uncombined Variance Arrays"][0][i,j], Regions_Genus[reg]["Uncombined Variance Arrays"][1][i,j], Regions_Genus[reg]["Uncombined Variance Arrays"][2][i,j]) < ERangeCap:
                     continue
                 else:
+                    GenusPairName = str(Regions_Genus[reg]["Genus Names"][i,j]) # Genus pair for the chosen interaction. Used as the dictionary key.
                     c = np.sort([int(Regions_Genus[reg]["Uncombined Variance Arrays"][0][i,j]), int(Regions_Genus[reg]["Uncombined Variance Arrays"][1][i,j]), int(Regions_Genus[reg]["Uncombined Variance Arrays"][2][i,j])]) # Sorts the c values for the interaction
-                    ERange[i,j] = Qtot(c[0]/kScale, c[2]*kScale, c, nstep, logfactorial, True)
-                    
-        ERangeLoc = np.transpose(np.nonzero(ERange)) # Returns the locations of all nonzero ERanges.
-        Pairs = np.unique(Regions_Genus[reg]["Genus Names"]) # This will contain all of the unique bird-plant genus pairs.
-        SpecSpecSums = np.zeros(np.shape(Pairs)) # This will contain the sum of squares for the species-species interactions.
-        Pair_Table = Regions_Genus[reg]["Genus Names"] # Copied once to reduce dictionary searches
-        
-        for k in ERangeLoc:
-            k = k.reshape(2,1)
-            MatchLoc = np.where(Pairs == Pair_Table[k[0], k[1]])[0]
-            SpecSpecSums[MatchLoc] = SpecSpecSums[MatchLoc] + ERange[k[0], k[1]] ** 2 # Adds the ERange squared to the corresponding location in the species-species sums.
-        
-        Pairs = Pairs[np.nonzero(SpecSpecSums)] # Shrinks the list of grouped pairs to only those with nonzero erange sums.
-        Combined = np.zeros((np.shape(Pairs)[0], 3), dtype = object) # This is to store the group names and the ERange counts together.
-        Combined[:,0] = Pairs
-        Combined[:,1] = SpecSpecSums[np.nonzero(SpecSpecSums)] # Stores the nonzero species-species sums.
+                    ERange = Qtot(c[0]/kScale, c[2]*kScale, c, nstep, logfactorial, True)
+                    if GenusPairName in PlotInfo:
+                        PlotInfo[GenusPairName][0].append([int(Regions_Genus[reg]["Uncombined Variance Arrays"][0][i,j]), int(Regions_Genus[reg]["Uncombined Variance Arrays"][1][i,j]), int(Regions_Genus[reg]["Uncombined Variance Arrays"][2][i,j])])
+                        PlotInfo[GenusPairName][1] += (ERange ** 2)
+                    else:
+                        PlotInfo[GenusPairName] = [[[int(Regions_Genus[reg]["Uncombined Variance Arrays"][0][i,j]), int(Regions_Genus[reg]["Uncombined Variance Arrays"][1][i,j]), int(Regions_Genus[reg]["Uncombined Variance Arrays"][2][i,j])]]]
+                        PlotInfo[GenusPairName].append([ERange ** 2])
         
         L = np.shape(Regions_Genus[reg]["Combined Variance Arrays"][0])[0]
         M = np.shape(Regions_Genus[reg]["Combined Variance Arrays"][0])[1]
-        ERange = np.zeros((I,J))
         # For interactions greater than ERangeCap, the ERange is entered into the array, otherwise it keeps it at 0.
         for l in range(L):
             for m in range(M):
                 if max(Regions_Genus[reg]["Combined Variance Arrays"][0][l,m], Regions_Genus[reg]["Combined Variance Arrays"][1][l,m], Regions_Genus[reg]["Combined Variance Arrays"][2][l,m]) < ERangeCap:
                     continue
                 else:
+                    GenusPairName = str(Regions_Genus[reg]["Genus Names Combined"][l,m])
                     c = np.sort([int(Regions_Genus[reg]["Combined Variance Arrays"][0][l,m]), int(Regions_Genus[reg]["Combined Variance Arrays"][1][l,m]), int(Regions_Genus[reg]["Combined Variance Arrays"][2][l,m])]) # Sorts the c values for the interaction
-                    ERange[l,m] = Qtot(c[0]/kScale, c[2]*kScale, c, nstep, logfactorial, True)
-        Regions_Genus[reg]["Combined ERange Plot Data"] = Combined
-        
-        ERangeLoc = np.transpose(np.nonzero(ERange))
-        Pairs = np.unique(Regions_Genus[reg]["Genus Names Combined"])
-        SpecSpecSums = np.zeros(np.shape(Pairs))
-        Pair_Table = Regions_Genus[reg]["Genus Names Combined"]
-        
-        for k in ERangeLoc:
-            k = k.reshape(2,1)
-            MatchLoc = np.where(Pairs == Pair_Table[k[0], k[1]])[0]
-            SpecSpecSums[MatchLoc] = SpecSpecSums[MatchLoc] + ERange[k[0], k[1]] ** 2
-        
-        Pairs = list(Pairs)
-        # Pull only the ERange sums from the species calculations that are of a grouped pair in Combined.
-        if np.shape(Combined)[0] == 0: # Continues if there is nothing to compute (Bellavista)   
-            continue
-        else:
-            for m in range(np.shape(Combined)[0]):
-                GroupName = Combined[m,0]
-                Combined[m,2] = SpecSpecSums[Pairs.index(GroupName)]
-            Regions_Genus[reg]["Combined Variance Plot Data"] = Combined
+                    PlotInfo[GenusPairName].append((Qtot(c[0]/kScale, c[2]*kScale, c, nstep, logfactorial, True)) ** 2)
+                  
+            Regions_Genus[reg]["Combined Variance Plot Data"] = PlotInfo
     return Regions_Genus
         
         

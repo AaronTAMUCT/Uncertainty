@@ -155,16 +155,20 @@ def ERange_Plot(Regions, siteNames):
     
     for j in range(2):
         for i in range(2):
-            Data = Regions[siteNames[i,j]]["Combined Variance Plot Data"]
-            Data = Data[Data[:,1] != Data[:,2]]
+            Data = np.array([x[1:3] for x in Regions[siteNames[i,j]]["Combined Variance Plot Data"].values()])
+            keys = np.array([x for x in Regions[siteNames[i,j]]["Combined Variance Plot Data"].keys()])
+            keys = keys[np.not_equal(Data[:,0], Data[:,1])]
+            Data = Data[np.not_equal(Data[:,0], Data[:,1])]
+            keys = keys[np.argsort(Data[:,0])]
+            Data = Data[np.argsort(Data[:,0])]
             xRange = np.shape(Data)[0]
             
-            ax[i,j].plot(np.arange(xRange), [np.log10(D) for D in Data[:,1]], label = 'Species-Separated')
-            ax[i,j].plot(np.arange(xRange), [np.log10(D) for D in Data[:,2]], label = 'Species-Combined')
+            ax[i,j].plot(np.arange(xRange), [np.log10(D) for D in Data[:,0]], label = 'Species-Separated')
+            ax[i,j].plot(np.arange(xRange), [np.log10(D) for D in Data[:,1]], label = 'Species-Combined')
             
             
             ax[i,j].set_title(siteNames[i,j])
-            ax[i,j].set_xticks(range(xRange), Data[:,0])
+            ax[i,j].set_xticks(range(xRange), keys)
             ax[i,j].tick_params(labelrotation = 90)  
             ax[i,j].set_yscale("log")
     
@@ -177,6 +181,42 @@ def ERange_Plot(Regions, siteNames):
     plt.tight_layout()
     plt.show()
     
+def ClusteredStackedBarChart(Regions, siteNames):
+    fig, ax = plt.subplots(2,2)
+    fig.suptitle('Interaction Counts of each Genus, Separated by Species and Site')
+    fig.set_size_inches(12, 9)
+    plt.rcParams.update({'font.size': 8})
+    
+    for j in range(2):
+        for i in range(2):
+            Dict = Regions[siteNames[i,j]]["Combined Variance Plot Data"]
+            Data = [x[0] for x in Dict.values() if len(x[0]) > 1]
+            genus_names = np.array([x for x in Dict.keys() if len(Dict[x][0]) > 1])
+            
+            for k, x in enumerate(Data):
+                if len(x) == 1:
+                    continue
+                else:
+                    colors = plt.cm.viridis(np.linspace(0, 1, len(x)))
+                    bottom = np.zeros(len(x[0]))
+                    for l, abundance in enumerate(x):
+                        ax[i,j].bar(
+                            k + np.arange(len(abundance)) * 0.15,
+                            abundance,
+                            width = 0.15,
+                            color = colors[l],
+                            bottom = bottom,
+                        )
+                        bottom += abundance
+            
+            ax[i,j].set_title(siteNames[i,j])
+            ax[i,j].set_xticks(np.arange(len(genus_names)) + 0.3)
+            ax[i,j].set_xticklabels(genus_names)
+            ax[i,j].tick_params(labelrotation = 90)
+            
+    plt.tight_layout()
+    plt.show()
+            
     
     
     

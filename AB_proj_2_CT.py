@@ -8,6 +8,7 @@ author: AB
 #%% Notes for Thron.
 """ 9 Sep 2023
     Turn in code to GitHub
+    Clustered Stacked Bar Chart of genus pairs by interaction value.
 """
 #%% Parameters and packages
 
@@ -35,11 +36,11 @@ kScale = 2 # Scalar operated with m and M
 ERangeCap = 10 # Used to restrict the values calculated when performing the ERange comparison.
 
 IncludeLognormal = False # Toggle to include Lognormal distribution in calculation.
-IncludeSmallValues = True # Toggle to include values below PlotRanges[0]
+IncludeSmallValues = False # Toggle to include values below PlotRanges[0]
 Points = True # Whether to include data points on plots
 LoadData = False # Toggle to load pre-calculated data for plotting/reviewing
 SaveData = False # Toggle to save loaded or calculated data to files
-Plotting = False # Toggle to plot calculated/loaded data
+Plotting = True # Toggle to plot calculated/loaded data
 
 PlotRanges = [10,20,30,40,50]
 xylims = np.array([-0.05,1.05]) # X and y ranges in contour plots.
@@ -73,8 +74,10 @@ if Plotting:
     QPlot("Uncertainty in Estimated Standard Deviation / Estimated Mean Intensity", "T_RUncert", Points, Regions, Data, PlotRanges, xylims)
     RangeGraphs(Regions, Data, siteNames)
     cmax_Hist(Regions, siteNames, Group)
-    try:
-        Regions = ERange_Processing(Regions, kScale, nstep, logfactorial, ERangeCap)
-        ERange_Plot(Regions, siteNames)
-    except FileNotFoundError:
-        sys.exit("Load or create the Genus file.")
+    if Group == "Genus":
+        try:
+            Regions = ERange_Processing(Regions, kScale, nstep, logfactorial, ERangeCap)
+            ERange_Plot(Regions, siteNames)
+            ClusteredStackedBarChart(Regions, siteNames)
+        except FileNotFoundError:
+            sys.exit("Load or create the Genus file.")
