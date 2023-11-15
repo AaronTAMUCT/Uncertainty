@@ -78,12 +78,15 @@ def QPlot(Title, Set, Points, Regions, Data, PlotRanges, xylims): # This functio
     
     plt.show()
     
-def RangeGraphs(Regions, Data, siteNames): # This function generates the range plot for bird-plant interactions.
+def RangeGraphs(Regions, Data, siteNames, GroupLabel): # This function generates the range plot for bird-plant interactions.
     Width = 0.40
     fig, ax = plt.subplots(3,2)
     fig.suptitle('Range Plot of Variance by Region')
     fig.set_size_inches(12, 9)
-    plt.xlabel("Bird/Plant Interactions")
+    
+    fig.add_subplot(111, frameon = False)
+    plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
+    plt.xlabel("Sorted "+ GroupLabel + " Index")
     plt.ylabel("Variance")
     
     for j in range(2):
@@ -91,32 +94,33 @@ def RangeGraphs(Regions, Data, siteNames): # This function generates the range p
             Reg = siteNames[i,j]
             ax[i,j].set_title(Reg)
             ax[i,j].set_ylim([1, Data['E_ConIntM_max'] + 5]) # Sets the x and y limits based on the largest in each direction
-            ax[i,j].set_xlim([-2, Data['CIMaxCount']]) 
-            if len(Regions[Reg]["Confidence Interval for Midpoint"]) == 0: # These lines are made for Bellavista, which tends to have nothing to offer here.
-                continue
-            E_Conf90M = Regions[Reg]["Confidence Interval for Midpoint"] # Shown in blue
-            E_Conf90X = Regions[Reg]["Confidence Interval for X"]   # Shown in red
-            E_EMidpoint = Regions[Reg]["Expected Midpoint"] # Shown in black
+            ax[i,j].set_xlim([-1, Data['CIMaxCount']])
             
-            ix = np.argsort(E_Conf90M, axis = 0)[:,0].T # Sorts all intervals by the 5% value.
+            if len(Regions[Reg]["Confidence Interval for Midpoint"]) > 0: # These lines are made for Bellavista, which tends to have nothing to offer here.
+                E_Conf90M = Regions[Reg]["Confidence Interval for Midpoint"] # Shown in blue
+                E_Conf90X = Regions[Reg]["Confidence Interval for X"]   # Shown in red
+                E_EMidpoint = Regions[Reg]["Expected Midpoint"] # Shown in black
+                
+                ix = np.argsort(E_Conf90M, axis = 0)[:,0].T # Sorts all intervals by the 5% value.
+                
+                E_Conf90MArr = np.array(E_Conf90M)
+                E_Conf90XArr = np.array(E_Conf90X)
+                E_EMidpointArr = np.array(E_EMidpoint)
+                E_Conf90M_2 = E_Conf90MArr[ix]
+                E_Conf90X_2 = E_Conf90XArr[ix]
+                E_EMidpoint_2 = E_EMidpointArr[ix]
+                
+                xspan = len(E_Conf90M_2)
             
-            E_Conf90MArr = np.array(E_Conf90M)
-            E_Conf90XArr = np.array(E_Conf90X)
-            E_EMidpointArr = np.array(E_EMidpoint)
-            E_Conf90M_2 = E_Conf90MArr[ix]
-            E_Conf90X_2 = E_Conf90XArr[ix]
-            E_EMidpoint_2 = E_EMidpointArr[ix]
-            
-            xspan = len(E_Conf90M_2)
-        
-            for k in range(xspan): # Here each range is plotted individually as 3 rectangles.
-                lowerlim = max(E_Conf90X_2[k][0],0.9)
-                ax[i,j].add_patch(patches.Rectangle((k, lowerlim), Width, E_Conf90X_2[k][1] - E_Conf90X_2[k][0], color = 'red'))
-                ax[i,j].add_patch(patches.Rectangle((k, E_Conf90M_2[k][0]), Width, E_Conf90M_2[k][1] - E_Conf90M_2[k][0], color = 'blue'))
-                ax[i,j].add_patch(patches.Rectangle((k-.1, E_EMidpoint_2[k]), 0.45, Width, color = 'black'))
+                for k in range(xspan): # Here each range is plotted individually as 3 rectangles.
+                    lowerlim = max(E_Conf90X_2[k][0],0.9)
+                    ax[i,j].add_patch(patches.Rectangle((k, lowerlim), Width, E_Conf90X_2[k][1] - E_Conf90X_2[k][0], color = 'red'))
+                    ax[i,j].add_patch(patches.Rectangle((k, E_Conf90M_2[k][0]), Width, E_Conf90M_2[k][1] - E_Conf90M_2[k][0], color = 'blue'))
+                    ax[i,j].add_patch(patches.Rectangle((k-.1, E_EMidpoint_2[k]), 0.45, Width, color = 'black'))
 
             ax[i,j].plot((E_Conf90M_2[0][0],E_Conf90M_2[xspan-1][1]), 'r-', alpha = 0.01)
             ax[i,j].set_yscale("log")
+            ax[i,j].set_xticks(np.arange(0, Data['CIMaxCount'] + 1, 5))
             ax[i,j].set_title(Reg)
             
     plt.tight_layout()
@@ -151,21 +155,19 @@ def ERange_Plot(Regions, siteNames):
 
     fig.add_subplot(111, frameon = False)
     plt.tick_params(labelcolor='none', which='both', top=False, bottom=False, left=False, right=False)
-    plt.ylabel("Variance")
     
     for j in range(2):
         for i in range(2):
-            Data = np.array([x[1:3] for x in Regions[siteNames[i,j]]["Combined Variance Plot Data"].values()])
+            Vals = np.array([x[1:3] for x in Regions[siteNames[i,j]]["Combined Variance Plot Data"].values()])
             keys = np.array([x for x in Regions[siteNames[i,j]]["Combined Variance Plot Data"].keys()])
-            keys = keys[np.not_equal(Data[:,0], Data[:,1])]
-            Data = Data[np.not_equal(Data[:,0], Data[:,1])]
-            keys = keys[np.argsort(Data[:,0])]
-            Data = Data[np.argsort(Data[:,0])]
-            xRange = np.shape(Data)[0]
+            keys = keys[np.not_equal(Vals[:,0], Vals[:,1])]
+            Vals = Vals[np.not_equal(Vals[:,0], Vals[:,1])]
+            keys = keys[np.argsort(Vals[:,0])]
+            Vals = Vals[np.argsort(Vals[:,0])]
+            xRange = np.shape(Vals)[0]
             
-            ax[i,j].plot(np.arange(xRange), [np.log10(D) for D in Data[:,0]], label = 'Species-Separated')
-            ax[i,j].plot(np.arange(xRange), [np.log10(D) for D in Data[:,1]], label = 'Species-Combined')
-            
+            ax[i,j].plot(np.arange(xRange), Vals[:,0], label = 'Species-Separated')
+            ax[i,j].plot(np.arange(xRange), Vals[:,1], label = 'Species-Combined')
             
             ax[i,j].set_title(siteNames[i,j])
             ax[i,j].set_xticks(range(xRange), keys)
@@ -178,6 +180,8 @@ def ERange_Plot(Regions, siteNames):
     handles = [handles[i] for i in index]
     fig.legend(handles, labels, loc = 'lower right')
     
+    plt.ylabel("Variance")
+    
     plt.tight_layout()
     plt.show()
     
@@ -187,13 +191,16 @@ def ClusteredStackedBarChart(Regions, siteNames):
     fig.set_size_inches(12, 9)
     plt.rcParams.update({'font.size': 8})
     
+    plt.ylabel("Interaction Counts")
+    plt.xlabel("Genus-Genus Combinations")
+    
     for j in range(2):
         for i in range(2):
             Dict = Regions[siteNames[i,j]]["Combined Variance Plot Data"]
-            Data = [x[0] for x in Dict.values() if len(x[0]) > 1]
-            genus_names = np.array([x for x in Dict.keys() if len(Dict[x][0]) > 1])
+            Vals = [x[0] for x in Dict.values() if len(x[0]) > 1]
+            genus_names = np.array([str(x) + ', ' + str(len(Dict[x][0])) for x in Dict.keys() if len(Dict[x][0]) > 1])
             
-            for k, x in enumerate(Data):
+            for k, x in enumerate(Vals):
                 if len(x) == 1:
                     continue
                 else:
@@ -208,7 +215,7 @@ def ClusteredStackedBarChart(Regions, siteNames):
                             bottom = bottom,
                         )
                         bottom += abundance
-            
+
             ax[i,j].set_title(siteNames[i,j])
             ax[i,j].set_xticks(np.arange(len(genus_names)) + 0.3)
             ax[i,j].set_xticklabels(genus_names)

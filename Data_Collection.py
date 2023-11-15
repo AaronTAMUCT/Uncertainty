@@ -103,23 +103,29 @@ def bp_data_processing_Proj_2(ColumnFile, RowFile, fileDict, siteNames, Group, P
             c32 = c32.reindex(sorted(c32.columns), axis=1)
             c32 = c32.reindex(sorted(c32.index, key=lambda x: x.lower()))
             
-            """ Removes all interactions under the specified minimum if necessitated by IncludeSmallValues. """
+            """ First, we need to keep only the interactions that have at least one location value above the set minimum. """
             
             if not IncludeSmallValues:
-                c12 = c12.where(c12 >= PlotRanges[0], other = 0)
-                c22 = c22.where(c22 >= PlotRanges[0], other = 0)
-                c32 = c32.where(c32 >= PlotRanges[0], other = 0)
+                
+                c12 = c12.where((c12 >= PlotRanges[0]) | (c22 >= PlotRanges[0]) | (c32 >= PlotRanges[0]), other = 0)
+                c22 = c22.where((c12 >= PlotRanges[0]) | (c22 >= PlotRanges[0]) | (c32 >= PlotRanges[0]), other = 0)
+                c32 = c32.where((c12 >= PlotRanges[0]) | (c22 >= PlotRanges[0]) | (c32 >= PlotRanges[0]), other = 0)
             
             """ Here, if the grouping is by genus, we need this separate 
                 process to gather the modified data for the variance plot. """
             
             if Group == "Genus":
-                """ First, we need to keep only the interactions that have one location value above the set minimum. """
                 
-                c12_Removed = c12.where((c12 >= PlotRanges[0]) | (c22 >= PlotRanges[0]) | (c32 >= PlotRanges[0]), other = 0)
-                c22_Removed = c22.where((c12 >= PlotRanges[0]) | (c22 >= PlotRanges[0]) | (c32 >= PlotRanges[0]), other = 0)
-                c32_Removed = c32.where((c12 >= PlotRanges[0]) | (c22 >= PlotRanges[0]) | (c32 >= PlotRanges[0]), other = 0)
+                """ We need to guarantee that only the interactions that have at least one location value above the set minimum are kept, regardless of IncludeSmallValues. """
                  
+                c12_Removed = copy.copy(c12)
+                c22_Removed = copy.copy(c22)
+                c32_Removed = copy.copy(c32)
+                
+                c12_Removed = c12_Removed.where((c12 >= PlotRanges[0]) | (c22 >= PlotRanges[0]) | (c32 >= PlotRanges[0]), other = 0)
+                c22_Removed = c22_Removed.where((c12 >= PlotRanges[0]) | (c22 >= PlotRanges[0]) | (c32 >= PlotRanges[0]), other = 0)
+                c32_Removed = c32_Removed.where((c12 >= PlotRanges[0]) | (c22 >= PlotRanges[0]) | (c32 >= PlotRanges[0]), other = 0)
+                
                 """ Next, we store the kept values. """
                 
                 Region["Uncombined Variance Arrays"] = [c12_Removed.to_numpy(), c22_Removed.to_numpy(), c32_Removed.to_numpy()]
@@ -145,9 +151,8 @@ def bp_data_processing_Proj_2(ColumnFile, RowFile, fileDict, siteNames, Group, P
                 
                 Region["Combined Variance Arrays"] = [c12_Removed.to_numpy(), c22_Removed.to_numpy(), c32_Removed.to_numpy()]
                 
-            """ Saves the genus names for each bird-plant interaction for the variance plot. """
+                """ Saves the genus names for each bird-plant interaction for the variance plot. """
             
-            if Group == "Genus":
                 Get_Genus_Labels(c12, dataB, dataP, "Genus Names", Region, False) # Between c12, c22, c32 and any of the variants with removed values, they all are interchangeable for this process.
             
             """ Now, we combine the rows and columns of each subset on the basis of the grouping. """

@@ -532,7 +532,7 @@ def ERange_Processing(Regions_Genus, kScale, nstep, logfactorial, ERangeCap): # 
                         PlotInfo[GenusPairName][1] += (ERange ** 2)
                     else:
                         PlotInfo[GenusPairName] = [[[int(Regions_Genus[reg]["Uncombined Variance Arrays"][0][i,j]), int(Regions_Genus[reg]["Uncombined Variance Arrays"][1][i,j]), int(Regions_Genus[reg]["Uncombined Variance Arrays"][2][i,j])]]]
-                        PlotInfo[GenusPairName].append([ERange ** 2])
+                        PlotInfo[GenusPairName].append(ERange ** 2)
         
         L = np.shape(Regions_Genus[reg]["Combined Variance Arrays"][0])[0]
         M = np.shape(Regions_Genus[reg]["Combined Variance Arrays"][0])[1]

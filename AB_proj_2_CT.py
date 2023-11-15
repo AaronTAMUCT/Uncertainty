@@ -3,13 +3,6 @@ Created on Sat Oct  8 09:43:49 2022
 
 author: AB
 """
-#%% Notes for Aaron (also in Overleaf)
-
-#%% Notes for Thron.
-""" 9 Sep 2023
-    Turn in code to GitHub
-    Clustered Stacked Bar Chart of genus pairs by interaction value.
-"""
 #%% Parameters and packages
 
 # Import packages
@@ -38,11 +31,11 @@ ERangeCap = 10 # Used to restrict the values calculated when performing the ERan
 IncludeLognormal = False # Toggle to include Lognormal distribution in calculation.
 IncludeSmallValues = False # Toggle to include values below PlotRanges[0]
 Points = True # Whether to include data points on plots
-LoadData = False # Toggle to load pre-calculated data for plotting/reviewing
+LoadData = True # Toggle to load pre-calculated data for plotting/reviewing
 SaveData = False # Toggle to save loaded or calculated data to files
 Plotting = True # Toggle to plot calculated/loaded data
 
-PlotRanges = [10,20,30,40,50]
+PlotRanges = [10,20,30,40,50] # Defines the bins for the contour plots. PlotRanges[0] defines the cutoff for kept interaction amounts.
 xylims = np.array([-0.05,1.05]) # X and y ranges in contour plots.
 
 """ Because the function Qfn is run well over 1,000,000 times, 
@@ -72,7 +65,7 @@ if Plotting:
     QPlot("Estimated Standard Deviation / Estimated Mean intensity", "T_Crange", Points, Regions, Data, PlotRanges, xylims)
     QPlot("Regional Mean Intensity Confidence Interval / Estimated Mean Intensity", "T_MidUncert", Points, Regions, Data, PlotRanges, xylims)
     QPlot("Uncertainty in Estimated Standard Deviation / Estimated Mean Intensity", "T_RUncert", Points, Regions, Data, PlotRanges, xylims)
-    RangeGraphs(Regions, Data, siteNames)
+    RangeGraphs(Regions, Data, siteNames, GroupLabel)
     cmax_Hist(Regions, siteNames, Group)
     if Group == "Genus":
         try:
